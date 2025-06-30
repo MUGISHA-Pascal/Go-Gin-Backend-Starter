@@ -14,5 +14,5 @@ func Connect() {
 		panic("failed to connect to database " + err.Error())
 	}
 	DB = connection
-	DB.AutoMigrate() // to be done after entity creation
+	DB.AutoMigrate(&Product{}, &User{}, &Order{}, &OrderItem{}, &Cart{}, &CartItem{}) // to be done after entity creation
 }
