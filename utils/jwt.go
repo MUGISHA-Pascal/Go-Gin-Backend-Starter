@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"os"
 	"time"
@@ -15,4 +17,37 @@ func GenerateToken(UserId uint) (string, error) {
 	claims["exp"] = time.Now().Add(time.Hour * 24)
 	return token.SignedString([]byte(jwtKey))
 }
-func validateToken(tokenStr string) (uint, error) {}
+func ValidateToken(tokenStr string) (uint, error) {
+	parsedToken, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+		return []byte(jwtKey), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+		userIDFloat, ok := claims["user_id"].(float64)
+		if !ok {
+			return 0, fmt.Errorf("error parsing user id from claims")
+		}
+		return uint(userIDFloat), nil
+	}
+	return 0, fmt.Errorf("invalid token")
+}
+func ParseToken(tokenString string) (uint, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method")
+		}
+		return []byte(jwtKey), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if idClaim, ok := claims["id"].(float64); ok {
+			return uint(idClaim), nil
+		}
+		return 0, errors.New("token does no contain valid id")
+	}
+	return 0, errors.New("invalid token")
+}
