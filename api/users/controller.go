@@ -61,7 +61,7 @@ func RegisterUser(c *gin.Context) {
 	newUser.Password = ""
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": newUser})
 }
-func loginUser(c *gin.Context) {
+func LoginUser(c *gin.Context) {
 	var cred utils.Credentials
 	var user database.User
 	if err := c.BindJSON(&cred); err != nil {
@@ -91,7 +91,7 @@ func loginUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": user})
 }
-func updateUser(c *gin.Context) {
+func UpdateUser(c *gin.Context) {
 	var updateUserDetails UserUpdate
 	if err := c.ShouldBindJSON(&updateUserDetails); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid json data"})
@@ -127,4 +127,56 @@ func updateUser(c *gin.Context) {
 	}
 	user.Password = ""
 	c.JSON(http.StatusOK, user)
+}
+func DeleteYourAccount(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+	var user database.User
+	if err := database.DB.First(&user, userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if err := database.DB.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while deleting the user account"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "user account deleted successfully"})
+}
+func GetAllUsers(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+		return
+	}
+	var user database.User
+	if err := database.DB.First(&user, userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if user.Role == "user" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are unauthorised to get all the users"})
+		return
+	}
+	var users []database.User
+	if err := database.DB.Find(&users).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"users": users})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users, "message": "users fetched successfully"})
+}
+func GetYourAccount(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "login to access your private information"})
+	}
+	var user database.User
+	if err := database.DB.Where("id = ?", userId).First(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{user})
+
 }
