@@ -177,6 +177,6 @@ func GetYourAccount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{user})
+	c.JSON(http.StatusOK, user)
 
 }
