@@ -1,0 +1,116 @@
+package orders
+
+import (
+	"fmt"
+	"github.com/MUGISHA-Pascal/Go-Backend-Starter/database"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+type DeliverDetails struct {
+	Order uint `json:"order"`
+}
+
+func PlaceOrder(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "login to continue"})
+		return
+	}
+	var user database.User
+	var cart database.Cart
+	if err := database.DB.First(&user, userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if err := database.DB.First(&cart, user.Cart).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "cart not found"})
+		return
+	}
+	var cartItems []database.CartItem
+	if err := database.DB.Where("cart_id = ?", cart.ID).Find(&cartItems).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	if len(cartItems) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No cart items found"})
+		return
+	}
+	var order database.Order
+	order.Status = "PENDING"
+	order.UserId = user.ID
+	order.Cart = cart.ID
+	if err := database.DB.Create(&order).Error; err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while saving order"})
+		return
+	}
+	if err := database.DB.Delete(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while cleaning cart"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Order placed successfully"})
+}
+func Deliver(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "login to continue"})
+		return
+	}
+	var user database.User
+	if err := database.DB.First(&user, userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if user.Role == "user" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authorised to perform this action"})
+		return
+	}
+	var deliverDetails DeliverDetails
+	if err := c.BindJSON(&deliverDetails); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "error while binding the request body"})
+		return
+	}
+	var order database.Order
+	if err := database.DB.First(&order, deliverDetails.Order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while getting the order"})
+		return
+	}
+	order.Status = "DELIVERED"
+	if err := database.DB.Save(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while updating the order"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Order delivered successfully"})
+}
+func RejectOrder(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "login to continue"})
+		return
+	}
+	var user database.User
+	if err := database.DB.First(&user, userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if user.Role == "user" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authorised to perform this action"})
+		return
+	}
+	var DeleteDetails DeliverDetails
+	if err := c.BindJSON(&DeleteDetails); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "error while bindind data"})
+		return
+	}
+	var order database.Order
+	if err := database.DB.Where("id=?", DeleteDetails.Order).First(&order).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "order not found"})
+		return
+	}
+	if err := database.DB.Delete(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while deleting the order"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "order rejected successfully"})
+}
