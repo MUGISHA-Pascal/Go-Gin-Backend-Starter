@@ -8,12 +8,25 @@ import (
 )
 
 type ProductUpdate struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	StockQty    int     `json:"stock_qty"`
+	Name        string  `json:"name" example:"iPhone 15"`
+	Description string  `json:"description" example:"Latest iPhone model with advanced features"`
+	Price       float64 `json:"price" example:"999.99"`
+	StockQty    int     `json:"stock_qty" example:"50"`
 }
 
+// CreateProduct godoc
+// @Summary Create a new product
+// @Description Create a new product (admin only)
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product body database.Product true "Product data"
+// @Success 201 {object} map[string]interface{} "Product created successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request - validation error or product already exists"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - admin access required"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/create [post]
 func CreateProduct(c *gin.Context) {
 	var product database.Product
 	var eProduct database.Product
@@ -52,6 +65,15 @@ func CreateProduct(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, gin.H{"message": "product saved successfully", "product": product})
 }
+
+// GetAllProducts godoc
+// @Summary Get all products
+// @Description Retrieve all available products
+// @Tags products
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Products retrieved successfully"
+// @Failure 404 {object} map[string]interface{} "Products not found"
+// @Router /products/all [get]
 func GetAllProducts(c *gin.Context) {
 	var products []database.Product
 	if err := database.DB.Find(&products).Error; err != nil {
@@ -60,6 +82,16 @@ func GetAllProducts(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "products fetched successfully", "products": products})
 }
+
+// GetOneProduct godoc
+// @Summary Get a specific product
+// @Description Retrieve a product by its ID
+// @Tags products
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {object} map[string]interface{} "Product retrieved successfully"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Router /products/{id} [get]
 func GetOneProduct(c *gin.Context) {
 	productId := c.Param("id")
 	if productId == "" {
@@ -73,6 +105,20 @@ func GetOneProduct(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "product fetched successfully", "product": product})
 }
+
+// DeleteProduct godoc
+// @Summary Delete a product
+// @Description Delete a product by ID (admin only)
+// @Tags products
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {object} map[string]interface{} "Product deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - admin access required"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/delete/{id} [delete]
 func DeleteProduct(c *gin.Context) {
 	productId := c.Param("id")
 	userId, exists := c.Get("userId")
@@ -103,6 +149,22 @@ func DeleteProduct(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"error": "product deleted successfully"})
 }
+
+// UpdateProduct godoc
+// @Summary Update a product
+// @Description Update product details by ID (admin only)
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Param product body ProductUpdate true "Product update data"
+// @Success 200 {object} map[string]interface{} "Product updated successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - admin access required"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/update/{id} [put]
 func UpdateProduct(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {

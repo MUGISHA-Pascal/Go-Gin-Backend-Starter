@@ -9,15 +9,29 @@ import (
 )
 
 type AddToCart struct {
-	ProductId uint `json:"productId"`
-	CartId    uint `json:"cartId"`
-	Quantity  int  `json:"quantity"`
+	ProductId uint `json:"productId" example:"1"`
+	CartId    uint `json:"cartId" example:"1"`
+	Quantity  int  `json:"quantity" example:"2"`
 }
 type RemoveItemFromCartDtls struct {
-	ProductId uint `json:"productId"`
-	Quantity  int  `json:"quantity"`
+	ProductId uint `json:"productId" example:"1"`
+	Quantity  int  `json:"quantity" example:"1"`
 }
 
+// AddItemToCart godoc
+// @Summary Add item to cart
+// @Description Add a product to the user's shopping cart
+// @Tags carts
+// @Accept json
+// @Produce json
+// @Param item body AddToCart true "Item to add to cart"
+// @Success 200 {object} map[string]interface{} "Item added successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request - validation error or insufficient stock"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /carts/add [post]
 func AddItemToCart(c *gin.Context) {
 	var addToCart AddToCart
 	userId, exists := c.Get("userId")
@@ -100,6 +114,21 @@ func AddItemToCart(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "item added successfully"})
 }
+
+// RemoveItemToCart godoc
+// @Summary Remove item from cart
+// @Description Remove a product from the user's shopping cart
+// @Tags carts
+// @Accept json
+// @Produce json
+// @Param item body RemoveItemFromCartDtls true "Item to remove from cart"
+// @Success 200 {object} map[string]interface{} "Cart item updated successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request - cannot remove more than available"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "User, cart, or cart item not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /carts/remove [delete]
 func RemoveItemToCart(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {

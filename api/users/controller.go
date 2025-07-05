@@ -14,11 +14,22 @@ import (
 var jwtKey = os.Getenv("JWT_SECRET")
 
 type UserUpdate struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Name     string `json:"name"`
+	Email    string `json:"email" example:"user@example.com"`
+	Password string `json:"password" example:"newpassword123"`
+	Name     string `json:"name" example:"John Doe"`
 }
 
+// RegisterUser godoc
+// @Summary Register a new user
+// @Description Register a new user account with email, name, and password
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body database.User true "User registration data"
+// @Success 200 {object} map[string]interface{} "User registered successfully with JWT token"
+// @Failure 400 {object} map[string]interface{} "Bad request - validation error or email already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /users/register [post]
 func RegisterUser(c *gin.Context) {
 	var newUser database.User
 	var eUser database.User
@@ -61,6 +72,18 @@ func RegisterUser(c *gin.Context) {
 	newUser.Password = ""
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": newUser})
 }
+
+// LoginUser godoc
+// @Summary User login
+// @Description Authenticate user with email and password, return JWT token
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param credentials body utils.Credentials true "Login credentials"
+// @Success 200 {object} map[string]interface{} "Login successful with JWT token"
+// @Failure 400 {object} map[string]interface{} "Bad request - invalid credentials"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /users/login [post]
 func LoginUser(c *gin.Context) {
 	var cred utils.Credentials
 	var user database.User
@@ -91,6 +114,22 @@ func LoginUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": user})
 }
+
+// UpdateUser godoc
+// @Summary Update user information
+// @Description Update user details by ID (admin only)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param user body UserUpdate true "User update data"
+// @Success 200 {object} database.User "User updated successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request - invalid data"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /users/update/user/{id} [put]
 func UpdateUser(c *gin.Context) {
 	var updateUserDetails UserUpdate
 	if err := c.ShouldBindJSON(&updateUserDetails); err != nil {
@@ -128,6 +167,18 @@ func UpdateUser(c *gin.Context) {
 	user.Password = ""
 	c.JSON(http.StatusOK, user)
 }
+
+// DeleteYourAccount godoc
+// @Summary Delete current user account
+// @Description Delete the authenticated user's account
+// @Tags users
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Account deleted successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /users/delete/myAccount [delete]
 func DeleteYourAccount(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
@@ -145,6 +196,18 @@ func DeleteYourAccount(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "user account deleted successfully"})
 }
+
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description Retrieve all users (admin only)
+// @Tags users
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Users retrieved successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - admin access required"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Security BearerAuth
+// @Router /users/all [get]
 func GetAllUsers(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
@@ -167,6 +230,17 @@ func GetAllUsers(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"users": users, "message": "users fetched successfully"})
 }
+
+// GetYourAccount godoc
+// @Summary Get current user account
+// @Description Retrieve the authenticated user's account information
+// @Tags users
+// @Produce json
+// @Success 200 {object} database.User "User account information"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Security BearerAuth
+// @Router /users/mine [get]
 func GetYourAccount(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
@@ -178,5 +252,4 @@ func GetYourAccount(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, user)
-
 }

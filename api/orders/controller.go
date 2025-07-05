@@ -8,9 +8,20 @@ import (
 )
 
 type DeliverDetails struct {
-	Order uint `json:"order"`
+	Order uint `json:"order" example:"1"`
 }
 
+// PlaceOrder godoc
+// @Summary Place a new order
+// @Description Place an order using items from the user's cart
+// @Tags orders
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Order placed successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "User, cart, or cart items not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/place-order [post]
 func PlaceOrder(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
@@ -51,6 +62,21 @@ func PlaceOrder(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Order placed successfully"})
 }
+
+// Deliver godoc
+// @Summary Deliver an order
+// @Description Mark an order as delivered (admin only)
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param order body DeliverDetails true "Order delivery details"
+// @Success 200 {object} map[string]interface{} "Order delivered successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - admin access required"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/deliver [put]
 func Deliver(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
@@ -83,6 +109,21 @@ func Deliver(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Order delivered successfully"})
 }
+
+// RejectOrder godoc
+// @Summary Reject an order
+// @Description Reject and delete an order (admin only)
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param order body DeliverDetails true "Order rejection details"
+// @Success 200 {object} map[string]interface{} "Order rejected successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - admin access required"
+// @Failure 404 {object} map[string]interface{} "User or order not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/reject [delete]
 func RejectOrder(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {

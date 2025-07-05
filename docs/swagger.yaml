@@ -1,0 +1,723 @@
+basePath: /
+definitions:
+  carts.AddToCart:
+    properties:
+      cartId:
+        example: 1
+        type: integer
+      productId:
+        example: 1
+        type: integer
+      quantity:
+        example: 2
+        type: integer
+    type: object
+  carts.RemoveItemFromCartDtls:
+    properties:
+      productId:
+        example: 1
+        type: integer
+      quantity:
+        example: 1
+        type: integer
+    type: object
+  database.Product:
+    properties:
+      created_at:
+        type: string
+      description:
+        example: Latest iPhone model with advanced features
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: iPhone 15
+        type: string
+      price:
+        example: 999.99
+        type: number
+      stock_qty:
+        example: 50
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  database.User:
+    properties:
+      cart:
+        example: 1
+        type: integer
+      created_at:
+        type: string
+      email:
+        example: john@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: hashedpassword
+        type: string
+      role:
+        example: user
+        type: string
+      updated_at:
+        type: string
+    type: object
+  orders.DeliverDetails:
+    properties:
+      order:
+        example: 1
+        type: integer
+    type: object
+  products.ProductUpdate:
+    properties:
+      description:
+        example: Latest iPhone model with advanced features
+        type: string
+      name:
+        example: iPhone 15
+        type: string
+      price:
+        example: 999.99
+        type: number
+      stock_qty:
+        example: 50
+        type: integer
+    type: object
+  users.UserUpdate:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: newpassword123
+        type: string
+    type: object
+  utils.Credentials:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A RESTful API for e-commerce backend with user authentication, product
+    management, cart operations, and order processing.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Go Backend Starter API
+  version: "1.0"
+paths:
+  /carts/add:
+    post:
+      consumes:
+      - application/json
+      description: Add a product to the user's shopping cart
+      parameters:
+      - description: Item to add to cart
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/carts.AddToCart'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item added successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - validation error or insufficient stock
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Product not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add item to cart
+      tags:
+      - carts
+  /carts/remove:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a product from the user's shopping cart
+      parameters:
+      - description: Item to remove from cart
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/carts.RemoveItemFromCartDtls'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cart item updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - cannot remove more than available
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User, cart, or cart item not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove item from cart
+      tags:
+      - carts
+  /orders/deliver:
+    put:
+      consumes:
+      - application/json
+      description: Mark an order as delivered (admin only)
+      parameters:
+      - description: Order delivery details
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/orders.DeliverDetails'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order delivered successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - admin access required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Deliver an order
+      tags:
+      - orders
+  /orders/place-order:
+    post:
+      description: Place an order using items from the user's cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order placed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User, cart, or cart items not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Place a new order
+      tags:
+      - orders
+  /orders/reject:
+    delete:
+      consumes:
+      - application/json
+      description: Reject and delete an order (admin only)
+      parameters:
+      - description: Order rejection details
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/orders.DeliverDetails'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order rejected successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - admin access required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User or order not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reject an order
+      tags:
+      - orders
+  /products/{id}:
+    get:
+      description: Retrieve a product by its ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Product not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get a specific product
+      tags:
+      - products
+  /products/all:
+    get:
+      description: Retrieve all available products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Products retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Products not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get all products
+      tags:
+      - products
+  /products/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new product (admin only)
+      parameters:
+      - description: Product data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/database.Product'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Product created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - validation error or product already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - admin access required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new product
+      tags:
+      - products
+  /products/delete/{id}:
+    delete:
+      description: Delete a product by ID (admin only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - admin access required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Product not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a product
+      tags:
+      - products
+  /products/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update product details by ID (admin only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product update data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/products.ProductUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - admin access required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Product not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a product
+      tags:
+      - products
+  /users/all:
+    get:
+      description: Retrieve all users (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Users retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - admin access required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all users
+      tags:
+      - users
+  /users/delete/myAccount:
+    delete:
+      description: Delete the authenticated user's account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete current user account
+      tags:
+      - users
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password, return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/utils.Credentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful with JWT token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - invalid credentials
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User login
+      tags:
+      - users
+  /users/mine:
+    get:
+      description: Retrieve the authenticated user's account information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User account information
+          schema:
+            $ref: '#/definitions/database.User'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user account
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with email, name, and password
+      parameters:
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/database.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User registered successfully with JWT token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - validation error or email already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - users
+  /users/update/user/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update user details by ID (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/users.UserUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            $ref: '#/definitions/database.User'
+        "400":
+          description: Bad request - invalid data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user information
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
