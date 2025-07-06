@@ -791,7 +791,7 @@ const docTemplate = `{
         },
         "/users/register": {
             "post": {
-                "description": "Register a new user account with email, name, and password",
+                "description": "Register a new user account with email, name, password, and optional role",
                 "consumes": [
                     "application/json"
                 ],

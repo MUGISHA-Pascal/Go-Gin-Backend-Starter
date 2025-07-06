@@ -21,7 +21,7 @@ type UserUpdate struct {
 
 // RegisterUser godoc
 // @Summary Register a new user
-// @Description Register a new user account with email, name, and password
+// @Description Register a new user account with email, name, password, and optional role
 // @Tags users
 // @Accept json
 // @Produce json
@@ -53,9 +53,8 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 	newUser.Password = string(hashedPass)
-	if newUser.Role != "" {
-		newUser.Role = "admin"
-	}
+	// Allow user to specify their own role during registration
+	// If no role is provided, it will default to "user" as defined in the model
 	if err := database.DB.Create(&newUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creating user"})
 		return

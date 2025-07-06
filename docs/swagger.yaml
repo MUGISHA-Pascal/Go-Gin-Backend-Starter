@@ -636,7 +636,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register a new user account with email, name, and password
+      description: Register a new user account with email, name, password, and optional
+        role
       parameters:
       - description: User registration data
         in: body
