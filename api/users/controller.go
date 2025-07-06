@@ -3,15 +3,16 @@ package users
 import (
 	"github.com/MUGISHA-Pascal/Go-Backend-Starter/database"
 	"github.com/MUGISHA-Pascal/Go-Backend-Starter/utils"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"net/http"
 	"os"
+	"fmt"
 )
 
-var jwtKey = os.Getenv("JWT_SECRET")
+// jwtKey will be loaded from environment in each function
 
 type UserUpdate struct {
 	Email    string `json:"email" example:"user@example.com"`
@@ -59,6 +60,12 @@ func RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creating user"})
 		return
 	}
+	jwtKey := os.Getenv("JWT_SECRET")
+	if jwtKey == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
+		return
+	}
+	fmt.Println("JWT_SECRET for generation:", jwtKey)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    newUser.ID,
 		"email": newUser.Email,
@@ -102,6 +109,12 @@ func LoginUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid password"})
 		return
 	}
+	jwtKey := os.Getenv("JWT_SECRET")
+	if jwtKey == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
+		return
+	}
+	fmt.Println("JWT_SECRET for login generation:", jwtKey)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    user.ID,
 		"email": user.Email,

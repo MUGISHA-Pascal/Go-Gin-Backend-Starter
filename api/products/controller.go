@@ -52,7 +52,7 @@ func CreateProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "all products details are required"})
 		return
 	}
-	if err := database.DB.Where("name = ?", product.Name).Find(&eProduct).Error; err == nil {
+	if err := database.DB.Where("name = ?", product.Name).First(&eProduct).Error; err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "product already exists"})
 		return
 	} else if err != gorm.ErrRecordNotFound {
