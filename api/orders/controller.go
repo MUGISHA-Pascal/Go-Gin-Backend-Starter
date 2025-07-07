@@ -48,20 +48,71 @@ func PlaceOrder(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No cart items found"})
 		return
 	}
-	var order database.Order
-	order.Status = "PENDING"
-	order.UserId = user.ID
-	order.Cart = cart.ID
-	if err := database.DB.Create(&order).Error; err != nil {
-		fmt.Println(err)
+
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to start transaction"})
+		return
+	}
+
+	order := database.Order{
+		Status: "PENDING",
+		UserId: user.ID,
+		Cart:   cart.ID,
+	}
+	if err := tx.Create(&order).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while saving order"})
 		return
 	}
-	if err := database.DB.Delete(&order).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while cleaning cart"})
+
+	for _, cartItem := range cartItems {
+		var product database.Product
+		if err := tx.First(&product, cartItem.ProductId).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusNotFound, gin.H{"error": "product not found for cart item"})
+			return
+		}
+		if product.StockQty < cartItem.Quantity {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "not enough stock for product: " + product.Name})
+			return
+		}
+		// Create order item
+		orderItem := database.OrderItem{
+			OrderId:   order.ID,
+			ProductId: product.ID,
+			Quantity:  cartItem.Quantity,
+			Price:     product.Price,
+		}
+		if err := tx.Create(&orderItem).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create order item"})
+			return
+		}
+		// Decrement product stock
+		product.StockQty -= cartItem.Quantity;
+		if err := tx.Save(&product).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update product stock"})
+			return
+		}
+	}
+
+	// Clear the cart (delete all cart items)
+	if err := tx.Where("cart_id = ?", cart.ID).Delete(&database.CartItem{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to clear cart"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Order placed successfully"})
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to commit transaction"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Order placed successfully", "order": order})
 }
 
 // Deliver godoc
