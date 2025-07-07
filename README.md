@@ -102,6 +102,7 @@ This provides a complete interactive documentation where you can:
 - `POST /orders/place-order` - Place new order
 - `PUT /orders/deliver` - Deliver order (admin only)
 - `DELETE /orders/reject` - Reject order (admin only)
+- `POST /orders/pay` - Pay for an order (virtual payment)
 
 ## Authentication
 
@@ -140,6 +141,15 @@ The API uses JWT (JSON Web Tokens) for authentication. To access protected endpo
 - `user_id`: Associated user ID
 - `status`: Order status (PENDING/DELIVERED)
 - `cart`: Associated cart ID
+
+### Payment
+- `id`: Primary key
+- `order_id`: Associated order ID
+- `amount`: Payment amount
+- `status`: Payment status (e.g., PAID)
+- `payment_method`: Payment method (e.g., virtual_card)
+- `transaction_id`: Transaction reference
+- `created_at`, `updated_at`: Timestamps
 
 ## Development
 

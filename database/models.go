@@ -50,3 +50,14 @@ type CartItem struct {
 	ProductId uint `json:"product_id" example:"1"`
 	Quantity  int  `json:"quantity" example:"2"`
 }
+
+type Payment struct {
+	ID            uint      `json:"id" gorm:"primaryKey"`
+	OrderID       uint      `json:"order_id"`
+	Amount        float64   `json:"amount"`
+	Status        string    `json:"status"`
+	PaymentMethod string    `json:"payment_method"`
+	TransactionID string    `json:"transaction_id"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}

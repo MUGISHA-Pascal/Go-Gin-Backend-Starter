@@ -47,6 +47,7 @@ func setupOrderRoutes(rg *gin.RouterGroup) {
 		orderRoutes.POST("/place-order", orders.PlaceOrder)
 		orderRoutes.PUT("/deliver", orders.Deliver)
 		orderRoutes.DELETE("/reject", orders.RejectOrder)
+		orderRoutes.POST("/pay", orders.PayOrder)
 	}
 }
 func setupCartRoutes(rg *gin.RouterGroup) {

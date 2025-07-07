@@ -336,6 +336,58 @@ paths:
       summary: Reject an order
       tags:
       - orders
+  /orders/pay:
+    post:
+      consumes:
+        - application/json
+      description: Simulate virtual payment for an order
+      parameters:
+        - description: Payment details
+          in: body
+          name: payment
+          required: true
+          schema:
+            type: object
+            properties:
+              order_id:
+                type: integer
+                example: 1
+              payment_method:
+                type: string
+                example: "virtual_card"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Payment successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Order not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: Pay for an order
+      tags:
+        - orders
   /products/{id}:
     get:
       description: Retrieve a product by its ID

@@ -135,8 +135,9 @@ func DeleteProduct(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"Error": "User not found"})
 		return
 	}
-	if user.Role != "user" {
+	if user.Role == "user" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authorized for this action"})
+		return
 	}
 	var product database.Product
 	if err := database.DB.First(&product, productId).Error; err != nil {
@@ -147,7 +148,7 @@ func DeleteProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while deleting product"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"error": "product deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "product deleted successfully"})
 }
 
 // UpdateProduct godoc

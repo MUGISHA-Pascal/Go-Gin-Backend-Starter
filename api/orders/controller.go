@@ -155,3 +155,72 @@ func RejectOrder(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "order rejected successfully"})
 }
+
+// PayOrder godoc
+// @Summary Pay for an order
+// @Description Simulate virtual payment for an order
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param payment body struct{OrderID uint `json:"order_id"`; PaymentMethod string `json:"payment_method"`} true "Payment details"
+// @Success 200 {object} map[string]interface{} "Payment successful"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Order not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/pay [post]
+func PayOrder(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "login to continue"})
+		return
+	}
+	var req struct {
+		OrderID       uint   `json:"order_id"`
+		PaymentMethod string `json:"payment_method"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	var order database.Order
+	if err := database.DB.First(&order, req.OrderID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "order not found"})
+		return
+	}
+	if order.UserId != userId && userId != 1 { // 1 is super admin, adjust as needed
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authorized to pay for this order"})
+		return
+	}
+	// Simulate payment
+	amount := 0.0
+	var cart database.Cart
+	if err := database.DB.First(&cart, order.Cart).Error; err == nil {
+		var cartItems []database.CartItem
+		database.DB.Where("cart_id = ?", cart.ID).Find(&cartItems)
+		for _, item := range cartItems {
+			var product database.Product
+			if err := database.DB.First(&product, item.ProductId).Error; err == nil {
+				amount += float64(item.Quantity) * product.Price
+			}
+		}
+	}
+	payment := database.Payment{
+		OrderID:       order.ID,
+		Amount:        amount,
+		Status:        "PAID",
+		PaymentMethod: req.PaymentMethod,
+		TransactionID: fmt.Sprintf("TXN-%d", order.ID),
+	}
+	if err := database.DB.Create(&payment).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record payment"})
+		return
+	}
+	order.Status = "PAID"
+	if err := database.DB.Save(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update order status"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Payment successful", "payment": payment})
+}
