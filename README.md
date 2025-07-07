@@ -183,4 +183,13 @@ This will update the documentation files in the `docs/` directory.
 
 ## License
 
-This project is licensed under the Apache 2.0 License. 
+This project is licensed under the Apache 2.0 License.
+
+## Virtual Payment Flow
+
+This project uses a simulated (virtual) payment system for demonstration and development purposes. When a user pays for an order, the backend calculates the total amount, generates a fake transaction ID, and marks the order as paid. No real money is transferred and no external payment provider is contacted.
+
+**How to extend for real payments:**
+- Replace the logic in `utils/payment.go` with integration to a real payment provider (e.g., Stripe, PayPal).
+- Ensure to handle payment confirmation, webhooks, and error scenarios securely.
+- Never store real payment credentials or secrets in the codebase; always use environment variables. 

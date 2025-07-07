@@ -5,6 +5,7 @@ import (
 	"github.com/MUGISHA-Pascal/Go-Backend-Starter/database"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"github.com/MUGISHA-Pascal/Go-Backend-Starter/utils"
 )
 
 type DeliverDetails struct {
@@ -189,37 +190,13 @@ func PayOrder(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "order not found"})
 		return
 	}
-	if order.UserId != userId && userId != 1 { // 1 is super admin, adjust as needed
+	if order.UserId != userId && userId != 1 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authorized to pay for this order"})
 		return
 	}
-	// Simulate payment
-	amount := 0.0
-	var cart database.Cart
-	if err := database.DB.First(&cart, order.Cart).Error; err == nil {
-		var cartItems []database.CartItem
-		database.DB.Where("cart_id = ?", cart.ID).Find(&cartItems)
-		for _, item := range cartItems {
-			var product database.Product
-			if err := database.DB.First(&product, item.ProductId).Error; err == nil {
-				amount += float64(item.Quantity) * product.Price
-			}
-		}
-	}
-	payment := database.Payment{
-		OrderID:       order.ID,
-		Amount:        amount,
-		Status:        "PAID",
-		PaymentMethod: req.PaymentMethod,
-		TransactionID: fmt.Sprintf("TXN-%d", order.ID),
-	}
-	if err := database.DB.Create(&payment).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record payment"})
-		return
-	}
-	order.Status = "PAID"
-	if err := database.DB.Save(&order).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update order status"})
+	payment, err := utils.ProcessPayment(req.OrderID, req.PaymentMethod)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Payment successful", "payment": payment})
