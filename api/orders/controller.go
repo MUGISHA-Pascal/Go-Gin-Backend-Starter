@@ -1,11 +1,11 @@
 package orders
 
 import (
-	"fmt"
-	"github.com/MUGISHA-Pascal/Go-Backend-Starter/database"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/MUGISHA-Pascal/Go-Backend-Starter/database"
 	"github.com/MUGISHA-Pascal/Go-Backend-Starter/utils"
+	"github.com/gin-gonic/gin"
 )
 
 type DeliverDetails struct {
